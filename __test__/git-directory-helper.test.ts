@@ -1,8 +1,10 @@
 import * as core from '@actions/core'
+import * as exec from '@actions/exec'
 import * as fs from 'fs'
 import * as gitDirectoryHelper from '../lib/git-directory-helper'
 import * as io from '@actions/io'
 import * as path from 'path'
+import {ExecOptions} from '@actions/exec/lib/interfaces'
 import {IGitCommandManager} from '../lib/git-command-manager'
 
 const testWorkspace = path.join(__dirname, '_temp', 'git-directory-helper')
@@ -200,6 +202,64 @@ describe('git-directory-helper tests', () => {
 
     // Assert
     const files = await fs.promises.readdir(repositoryPath)
+    expect(files).toHaveLength(0)
+    expect(core.warning).not.toHaveBeenCalled()
+    expect(git.isDetached).not.toHaveBeenCalled()
+  })
+
+  const removesOtherOwnersFilesWhenCleanRequested =
+    'removes files owned by someone else'
+  it(removesOtherOwnersFilesWhenCleanRequested, async () => {
+    // Arrange
+    await setup(removesOtherOwnersFilesWhenCleanRequested)
+    clean = true
+    await io.rmRF(path.join(repositoryPath, '.git'))
+    let container = path.join(repositoryPath, 'hello', 'world')
+    await io.mkdirP(container)
+    let file = path.join(container, 'file')
+    await fs.promises.writeFile(file, '')
+    await exec.exec(`sudo chown root ${file}`)
+
+    // Act
+    await gitDirectoryHelper.prepareExistingDirectory(
+      git,
+      repositoryPath,
+      repositoryUrl,
+      clean,
+      ref
+    )
+
+    // Assert
+    expect(core.info).not.toHaveBeenCalled()
+    const files = await fs.promises.readdir(repositoryPath)
+    expect(files).toHaveLength(0)
+    expect(core.warning).not.toHaveBeenCalled()
+    expect(git.isDetached).not.toHaveBeenCalled()
+  })
+
+  const removesOtherOwnersFilesInRepoWhenCleanRequested =
+    'removes files in repo owned by someone else'
+  it(removesOtherOwnersFilesInRepoWhenCleanRequested, async () => {
+    // Arrange
+    await setup(removesOtherOwnersFilesInRepoWhenCleanRequested)
+    clean = true
+    let container = path.join(repositoryPath, 'hello', 'world')
+    await io.mkdirP(container)
+    let file = path.join(container, 'file')
+    await fs.promises.writeFile(file, '')
+    await exec.exec(`sudo chown root ${file}`)
+
+    // Act
+    await gitDirectoryHelper.prepareExistingDirectory(
+      git,
+      repositoryPath,
+      repositoryUrl,
+      clean,
+      ref
+    )
+
+    // Assert
+    const files = await fs.promises.readdir(container)
     expect(files).toHaveLength(0)
     expect(core.warning).not.toHaveBeenCalled()
     expect(git.isDetached).not.toHaveBeenCalled()
