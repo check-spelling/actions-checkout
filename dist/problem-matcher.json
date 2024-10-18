@@ -4,7 +4,8 @@
             "owner": "checkout-git",
             "pattern": [
                 {
-                    "regexp": "^(fatal|error): (.*)$",
+                    "regexp": "^(fatal|error|notice|warning): (.*)$",
+                    "severity": 1,
                     "message": 2
                 }
             ]

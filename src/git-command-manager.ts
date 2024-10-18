@@ -478,7 +478,7 @@ class GitCommandManager {
       return ''
     }
 
-    return stdout
+    return stdout.replace(/^fatal:/, 'notice:')
   }
 
   async tryReset(): Promise<boolean> {

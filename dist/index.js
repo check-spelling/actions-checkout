@@ -854,7 +854,7 @@ class GitCommandManager {
             if (stdout.includes('\n')) {
                 return '';
             }
-            return stdout;
+            return stdout.replace(/^fatal:/, 'notice:');
         });
     }
     tryReset() {
